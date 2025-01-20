@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV_NAME="test-venv"
+ENV_NAME=".venv"
 
 currentPath=${PWD}
 cd "$currentPath"
