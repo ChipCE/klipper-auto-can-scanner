@@ -14,6 +14,5 @@ chmod +x ./scan.sh
 
 sudo systemctl daemon-reload
 sudo systemctl start klipper-auto-can-scanner
-# this service does not need to be run at startup
-# sudo systemctl enable klipper-auto-can-scanner
+sudo systemctl enable klipper-auto-can-scanner
  

@@ -7,7 +7,7 @@
 - CANバスを使用するKlipperシステムで、ツールヘッドのCANボードを入れ替える際に、新しいボードのCAN UUIDを自動認識させるためのプログラムです。
 
 ### 0.2 原理
-- 本プログラムは、systemdのサービスとして登録されます。デバイスを起動する際に一度だけ自動実行します(デフォルトは無効)。また、<code>mainsail UIの「system/service」</code>から強制実行こともできます。
+- 本プログラムは、systemdのサービスとして登録されます。デバイスを起動する際に一度だけ自動実行します。また、<code>mainsail/fluidd UIの「system/service」</code>から強制実行こともできます。
 - 本プログラムはCAN UUIDスキャンを実行し、メインMCUに指定されたUUID以外がスキャンされた場合、そのUUIDを<code>deviceConfigName</code>で指定された設定項目名の<code>canbus_uuid</code>に代入します。
 - ※<code>2つ以上</code>のUUIDがスキャンされる場合、どれを使用するか特定できないため、本プログラムは異常状態で終了します。
 
