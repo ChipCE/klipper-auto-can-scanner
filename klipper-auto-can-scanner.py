@@ -66,6 +66,10 @@ def readServiceConfig(configFile):
                 logging.error("Invalid config : restartKlipper")
                 hasError = True
 
+            if type(serviceConfigJson["mainMcuUsingCan"]) != bool:
+                logging.error("Invalid config : mainMcuUsingCan")
+                hasError = True
+
             if type(serviceConfigJson["deviceConfigName"]) != str or serviceConfigJson["deviceConfigName"] == "":
                 logging.error("Invalid config : deviceConfigName")
                 hasError = True
@@ -163,12 +167,13 @@ def main():
         sys.exit(1)
 
     # current config content check
-    if not KLIPPER_CONFIG.has_option("mcu","canbus_uuid"):
-        logging.error("Invalid klipper config : [mcu]")
-        sys.exit(1)
-    else:
-        MAIN_MCU_UUID = KLIPPER_CONFIG["mcu"]["canbus_uuid"]
-        logging.info("Current config main mcu UUID : " + MAIN_MCU_UUID)
+    if SERVICE_CONFIG["mainMcuUsingCan"]:
+        if not KLIPPER_CONFIG.has_option("mcu","canbus_uuid"):
+            logging.error("Invalid klipper config : [mcu]")
+            sys.exit(1)
+        else:
+            MAIN_MCU_UUID = KLIPPER_CONFIG["mcu"]["canbus_uuid"]
+            logging.info("Current config main mcu UUID : " + MAIN_MCU_UUID)
 
     if not KLIPPER_CONFIG.has_option(SERVICE_CONFIG["deviceConfigName"],"canbus_uuid"):
         logging.error("Invalid klipper config : [" + SERVICE_CONFIG["deviceConfigName"] + "]")
@@ -179,13 +184,13 @@ def main():
 
     success, deviceUUIDs = getCanDeviceUUIDs(SERVICE_CONFIG["scannerPath"],SERVICE_CONFIG["scanTimeout"])
     if not success:
-        logging.error("CAN device UUID not found")
+        logging.error("CAN device UUID(s) not found")
         sys.exit(1)
-    if len(deviceUUIDs) < 1:
+    if len(deviceUUIDs) == 0:
         logging.info("No CAN device found.")
         sys.exit(0)
     else:
-        logging.info("Found devices : " + str(deviceUUIDs))
+        logging.info("Found device UUID(s) : " + str(deviceUUIDs))
 
 
     DEVICE_FOUND = 0

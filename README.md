@@ -4,11 +4,12 @@
 
 ### 0.1 目的
 
-- CANバスを使用するKlipperシステムで、ツールヘッドのCANボードを入れ替える際に、新しいボードのCAN UUIDを自動認識させるためのプログラムです。
+- CANバスを使用するKlipperシステムで、ツールヘッドのCANボードを入れ替える際に、新しいツールヘッドボードのCAN UUIDを自動認識させるためのプログラムです。
 
 ### 0.2 原理
+
 - 本プログラムは、systemdのサービスとして登録されます。デバイスを起動する際に一度だけ自動実行します。また、<code>mainsail/fluidd UIの「system/service」</code>から強制実行こともできます。
-- 本プログラムはCAN UUIDスキャンを実行し、メインMCUに指定されたUUID以外がスキャンされた場合、そのUUIDを<code>deviceConfigName</code>で指定された設定項目名の<code>canbus_uuid</code>に代入します。
+- 本プログラムはCAN UUIDスキャンを実行し、そのUUIDを<code>deviceConfigName</code>で指定された設定項目名の<code>canbus_uuid</code>に代入します。
 - ※<code>2つ以上</code>のUUIDがスキャンされる場合、どれを使用するか特定できないため、本プログラムは異常状態で終了します。
 
 ## 1. インストール
@@ -21,13 +22,15 @@ chmod +x ./install.sh
 </pre>
 
 ## 2. 設定ファイル
+<code>config.json</code>
 <pre>
 {
   "scannerPath" : "./scan.sh",
-  "scanTimeout" : 3,
+  "scanTimeout" : 10,
+  "deviceConfigName": "mcu toolhead",
+  "mainMcuUsingCan" : true,
   "klipperConfigFile": "/home/pi/klipper_config/printer.cfg",
   "restartKlipper": true,
-  "deviceConfigName": "mcu toolhead",
   "blackList": [],
   "whiteList": []
 }
@@ -35,11 +38,13 @@ chmod +x ./install.sh
 
 - <code>scannerPath</code> : CANスキャンコマンドを呼び出すスクリプトファイル。基本は変更不要。(例:"./scan.sh")
 - <code>scanTimeout</code> : CANスキャンの最大時間。(単位:秒)、(例:3)
+- <code>deviceConfigName</code> : printer.cfgに指定されたツールヘッドの設定項目名。(例:mcu toolhead)
+- <code>mainMcuUsingCan</code> : メインmcuがCAN通信で接続する場合trueにセットする。(例:true/false)
 - <code>klipperConfigFile</code> : printer.cfgのパス。(例:"/home/pi/klipper_config/printer.cfg")
 - <code>restartKlipper</code> : 設定を変更した後、klipperを再起動させるかどうか。(例:true/false)
-- <code>deviceConfigName</code> : printer.cfgに指定されたツールヘッドの設定項目名。(例:mcu toolhead)
 - <code>blackList</code> : ブラックリスト。ここに記載されたUUIDをスキップする。(例:["uuid1","uuid2"])
 - <code>whiteList</code> : ホワイトリスト。ここに記載されたUUIDのみ使用する。記載しない場合は全て使用可。(例:["uuid1","uuid2"])
+- ※Klipperのインストール場所が変更された場合、または<code>can0</code>以外のインターフェースを使用する場合等は、<code>scan.sh</code>内のスキャンコマンドを修正する必要があります。
 
 ## 3. ログファイル
 
