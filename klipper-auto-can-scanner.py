@@ -9,78 +9,109 @@ VERSION = "0.1b-20250119"
 CONFIG_FILE = "./config.json"
 LOG_FILE = "klipper-auto-can-scanner.log"
 LOG_LEVEL = logging.INFO
-SERVICE_CONFIG = None
-KLIPPER_CONFIG = None
+
 
 logging.basicConfig(level=LOG_LEVEL,  handlers=[logging.FileHandler(LOG_FILE, mode='w'), logging.StreamHandler()], format="%(asctime)-15s %(levelname)-8s %(message)s")
 
 
-def getCanDeviceUUID(venvPath,scannerPath,canBus,blackList,whiteList):
-    # ~/klippy-env/bin/python ~/klipper/scripts/canbus_query.py can0
-    # Found canbus_uuid=11aa22bb33cc, Application: Klipper
-    command = [venvPath, scannerPath, canBus]
-    deviceUUID = None
-
+def getCanDeviceUUIDs(scannerPath,timeout):
+    deviceUUIDs = []
     try:
-        result = subprocess.run(
-            command, 
-            shell=True, 
-            check=True,
-            text=True,
-            capture_output=True
-        )
-        print("Output:")
-        print(result.stdout)
-        return True, deviceUUID
-    except subprocess.CalledProcessError as e:
-        print("Error:")
-        print(e.stderr)
-        return False, deviceUUID
+        result = subprocess.run(['bash', scannerPath], capture_output=True, text=True, timeout = timeout)
 
-def writeKlipperConfig(canDeviceUUID):
-    return False
+        # Check the output
+        logging.info("ReturnCode : " + str(result.returncode))
+        logging.info("Stdout : " + str(result.stdout))
+        logging.info("Stderr : " + str(result.stderr))
 
+        return True,deviceUUIDs
+    except Exception as e:
+        logging.error("Get CAN device UUIDs error : " + str(e))
+        return False, []
 
-class SystemConfig(object):
+def readServiceConfig(configFile):
+    try:
+        with open(configFile) as serviceConfig:
+            serviceConfigJson = json.loads(serviceConfig.read())
+            hasError = False
 
-    def __init__(self, configFile):
-        self.configOk = True
-        configJson = {}
-        with open(configFile) as config_file:
-            configJson = json.loads(config_file.read())
-        # check params
-        if "variablesFile" not in configJson or "moonrakerPort" not in configJson or "updateInterval" not in configJson or "taskList" not in configJson or "apiTimeout" not in configJson:
-            raise ValueError("Missing parameter(s)")
-        if type(configJson["variablesFile"]) != str or configJson["variablesFile"] == "":
-            raise ValueError("Invalid moonrakerPort")
-        if type(configJson["moonrakerPort"]) != int or configJson["moonrakerPort"] <= 0:
-            raise ValueError("Invalid moonrakerPort")
-        if type(configJson["apiTimeout"]) != int or configJson["apiTimeout"] <= 0:
-            raise ValueError("Invalid apiTimeout")
-        if type(configJson["updateInterval"]) != int or configJson["updateInterval"] <= 0:
-            raise ValueError("Invalid updateInterval")
-        if type(configJson["taskList"]) != list or len(configJson["taskList"]) <= 0:
-            raise ValueError("Invalid taskList")
+            if type(serviceConfigJson["klipperConfigFile"]) != str or serviceConfigJson["klipperConfigFile"] == "":
+                logging.error("Invalid config : klipperConfigFile")
+                hasError = True
 
-        self.variablesFile = configJson["variablesFile"]
-        self.moonrakerPort = configJson["moonrakerPort"]
-        self.apiTimeout = configJson["apiTimeout"]
-        self.updateInterval = configJson["updateInterval"]
-        self.taskList = []
+            if type(serviceConfigJson["scannerPath"]) != str or serviceConfigJson["scannerPath"] == "":
+                logging.error("Invalid config : scannerPath")
+                hasError = True
+        
+            if type(serviceConfigJson["scanTimeout"]) != int:
+                logging.error("Invalid config : scanTimeout")
+                hasError = True
 
-        for rawTask in configJson["taskList"]:
-            tmpTask = Task(rawTask)
-            self.taskList.append(tmpTask)
+            if type(serviceConfigJson["restartKlipper"]) != bool:
+                logging.error("Invalid config : restartKlipper")
+                hasError = True
 
+            if type(serviceConfigJson["deviceConfigName"]) != str or serviceConfigJson["deviceConfigName"] == "":
+                logging.error("Invalid config : deviceConfigName")
+                hasError = True
 
+            if type(serviceConfigJson["blackList"]) != list:
+                logging.error("Invalid config : ")
+                hasError = True
 
-def readConfig(configFile):
+            if type(serviceConfigJson["whiteList"]) != list:
+                logging.error("Invalid config : ")
+                hasError = True
+
+            return not hasError,serviceConfigJson
+    except Exception as e:
+        logging.error("Failed to read service config : " + str(e))
+        return False,None
     return False,None
 
-
-
 def readKlipperConfig(configFile):
+    try:
+        config = configparser.ConfigParser(delimiters=(':','='))
+        config.read(configFile)
+        if len(config.sections()) == 0:
+            return False, None
+        return True, config
+    except Exception as e:
+        logging.error("Failed to read klipper config : " + str(e))
+        return False, None
     return False, None
+
+def getSavedConfig(configFile):
+    savedConfig = []
+    try:
+        with open(configFile) as configfile:
+            lines = configfile.readlines()
+            foundSavedConfig = False
+            for line in lines:
+                if line == "#*# <---------------------- SAVE_CONFIG ---------------------->\n":
+                    foundSavedConfig = True
+                if foundSavedConfig:
+                    savedConfig.append(line)
+    except Exception as e:
+        logging.warning("Failed to read saved config : " + str(e))
+        return False,[]
+    return True,savedConfig
+
+def writeKlipperConfig(klipperConfig,savedConfig,configFile):
+    with open(configFile, "w") as printerCfg:
+        try:
+            klipperConfig.write(printerCfg)
+        except Exception as e:
+            logging.error("Failed to write klipper config : " + str(e))
+            return False
+        
+        try:
+            if len(savedConfig) > 0:
+                printerCfg.writelines(savedConfig)
+        except Exception as e:
+            logging.error("Failed to write saved config : " + str(e))
+            return False
+    return True
 
 def restartKlipper():
     try:
@@ -94,41 +125,90 @@ def restartKlipper():
 
 
 def main():
-    success, SERVICE_CONFIG = readConfig(CONFIG_FILE)
+    SERVICE_CONFIG = None
+    KLIPPER_CONFIG = None
+    SAVED_CONFIG = []
+    MAIN_MCU_UUID = ""
+    CURRENT_TOOLHEAD_UUID = ""
+
+    # read service config
+    success, SERVICE_CONFIG = readServiceConfig(CONFIG_FILE)
     if not success:
         logging.error("Cannot read service config file : " + CONFIG_FILE)
         sys.exit(1)
 
+    # read current configs
     success, KLIPPER_CONFIG = readKlipperConfig(SERVICE_CONFIG["klipperConfigFile"])
     if not success:
         logging.error("Cannot read klipper config file : " + SERVICE_CONFIG["klipperConfigFile"])
         sys.exit(1)
-
-    if SERVICE_CONFIG["deviceConfigName"] not in KLIPPER_CONFIG:
-        logging.error("CAN device config " + SERVICE_CONFIG["deviceConfigName"] + "not found in klipper config")
+    success, SAVED_CONFIG = getSavedConfig(SERVICE_CONFIG["klipperConfigFile"])
+    if not success:
+        logging.error("Cannot read saved config file : " + SERVICE_CONFIG["klipperConfigFile"])
         sys.exit(1)
 
-    success, deviceUUID = getCanDeviceUUID(SERVICE_CONFIG["klipperVenvPath"], SERVICE_CONFIG["scannerPath"], SERVICE_CONFIG["canBus"], SERVICE_CONFIG["blackList"], SERVICE_CONFIG["whiteList"])
+    # current config content check
+    if not KLIPPER_CONFIG.has_option("mcu","canbus_uuid"):
+        logging.error("Invalid klipper config : [mcu]")
+        sys.exit(1)
+    else:
+        MAIN_MCU_UUID = KLIPPER_CONFIG["mcu"]["canbus_uuid"]
+        logging.info("Current config main mcu UUID : " + MAIN_MCU_UUID)
+
+    if not KLIPPER_CONFIG.has_option(SERVICE_CONFIG["deviceConfigName"],"canbus_uuid"):
+        logging.error("Invalid klipper config : [" + SERVICE_CONFIG["deviceConfigName"] + "]")
+        sys.exit(1)
+    else:
+        CURRENT_TOOLHEAD_UUID = KLIPPER_CONFIG[SERVICE_CONFIG["deviceConfigName"]]["canbus_uuid"]
+        logging.info("Current config toolhead mcu UUID : " + CURRENT_TOOLHEAD_UUID)
+
+    success, deviceUUIDs = getCanDeviceUUIDs(SERVICE_CONFIG["scannerPath"],SERVICE_CONFIG["scanTimeout"])
     if not success:
         logging.error("CAN device UUID not found")
         sys.exit(1)
-    logging.info("Found device " + deviceUUID)
+    if len(deviceUUIDs) < 1:
+        logging.info("No CAN device found.")
+        sys.exit(0)
+    else:
+        logging.info("Found devices : " + deviceUUIDs)
 
-    # check if saved UUID is the same as scanned one
 
-    logging.info("Overwrite klipper config file with new CAN UUID")
-    success = writeKlipperConfig(deviceUUID)
-    if not success:
-        logging.error("Cannot overwrite klipper config file : " + SERVICE_CONFIG["klipperConfigFile"])
+    DEVICE_FOUND = 0
+    NEW_TOOLHEAD_UUID = ""
+    for UUID in deviceUUIDs:
+        if (UUID != MAIN_MCU_UUID) and (UUID != CURRENT_TOOLHEAD_UUID) and (UUID not in SERVICE_CONFIG["blackList"]) and (len(SERVICE_CONFIG["whiteList"]) == 0 or (UUID in SERVICE_CONFIG["whiteList"])):
+            DEVICE_FOUND = DEVICE_FOUND + 1
+            NEW_TOOLHEAD_UUID = UUID
+
+
+    if DEVICE_FOUND == 0:
+        logging.info("No suitable CAN device was found, or the device is already configured")
+        sys.exit(0)
+
+    if DEVICE_FOUND > 1:
+        logging.error(str(DEVICE_FOUND) + " devices were found, but it cannot be determined which one is the correct device.")
+        sys.exit(1)
+
+    # update the config 
+    logging.info("Found suitable device UUID : " + NEW_TOOLHEAD_UUID)
+    KLIPPER_CONFIG[SERVICE_CONFIG["deviceConfigName"]]["canbus_uuid"] = NEW_TOOLHEAD_UUID
+    # write config file
+    success = writeKlipperConfig(KLIPPER_CONFIG,SAVED_CONFIG,SERVICE_CONFIG["klipperConfigFile"])
+    if success:
+        logging.info("Klipper configuration file updated successfully.")
+    else:
+        logging.error("Cannot update klipper configfile.")
         sys.exit(1)
 
     if SERVICE_CONFIG["restartKlipper"]:
+        logging.info("Restarting klipper...")
         success = restartKlipper()
         if not success:
-            logging.error("Cannot restart klipper service")
-        sys.exit(1)
+            logging.error("Cannot restart klipper service.")
+            sys.exit(1)
 
-    logging.info("Updated CAN device UUID :" + deviceUUID)
+    logging.info("New toolhead UUID has been updated : " + NEW_TOOLHEAD_UUID)
+    logging.info("Done!")
     return 0
 
 

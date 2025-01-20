@@ -10,6 +10,8 @@ python3 -m venv .venv
 
 yes | sudo cp -rf klipper-auto-can-scanner.service /etc/systemd/system/klipper-auto-can-scanner.service
 
+chmod +x ./scan.sh
+
 sudo systemctl daemon-reload
 sudo systemctl start klipper-auto-can-scanner
 sudo systemctl enable klipper-auto-can-scanner
