@@ -1,0 +1,14 @@
+[Unit]
+Description=Custom Klipper variable
+Wants=network.target
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/pi/klipper-auto-can-scanner/
+ExecStart=/home/pi/klipper-auto-can-scanner/.venv/bin/python /home/pi/klipper-auto-can-scanner/klipper-auto-can-scanner.py
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

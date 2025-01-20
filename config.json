@@ -1,0 +1,13 @@
+{
+  "klipperConfigFile": "/home/pi/klipper_config/printer.cfg",
+  "scannerPath" : "/home/pi/klipper/scripts/canbus_query.py",
+  "klipperVenvPath" : "/home/pi/klippy-env/bin/python",
+  "restartKlipper": true,
+  "canBus" : "can0",
+  "autoUpdateUUID" : true,
+  "deviceConfigName": "[mcu myCanDevice]",
+  "blackList": [],
+  "whiteList": [],
+
+  "debug": false
+}
