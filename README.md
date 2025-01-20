@@ -1,5 +1,11 @@
 # klipper-auto-can-scanner
 
+- version : 1.0rc1-20250119
+- Tested env: 
+  - Klipper : cf3b0475daa0d7154d2f986f94d8c184c7cf39c1
+  - Moonraker : 72ed175c520e3b9e3054e9ad7d27157577300df1
+  - Mainsail : 05e9e410a043fa5f2e2e461d34a35391f9982b84
+
 ## 0. 目的と原理
 
 ### 0.1 目的
@@ -50,9 +56,7 @@ chmod +x ./install.sh
 
 ログファイル : <code>~/klipper-auto-can-scanner/klipper-auto-can-scanner.log</code>
 
-## 4. UI
-
-## 5. 注意
+## 4. 注意
 
 - 本プログラムは<code>configparser</code>でKlipper設定ファイルの管理を行うため、設定ファイルのコメントは無視されます。コメントを使用する場合、インラインコメントを使用すること。
 
@@ -66,5 +70,5 @@ enable_pin: !PF15
 ...
 </pre>
 
-## 6. ライセンス
+## 5. ライセンス
 本プログラムは、[Klipper](https://github.com/Klipper3d/klipper)（GPL-3.0ライセンス）のコードを使用しているため、同じライセンス体制でコードの公開が義務付けられます。詳細については[ライセンスを確認](./LICENSE)してください。

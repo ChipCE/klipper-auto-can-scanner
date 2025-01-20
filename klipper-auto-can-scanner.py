@@ -5,7 +5,7 @@ import configparser
 import subprocess
 import logging
 
-VERSION = "0.1b-20250119"
+VERSION = "1.0rc1-20250119"
 CONFIG_FILE = "./config.json"
 LOG_FILE = "klipper-auto-can-scanner.log"
 LOG_LEVEL = logging.INFO
