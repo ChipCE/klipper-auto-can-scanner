@@ -24,7 +24,22 @@ def getCanDeviceUUIDs(scannerPath,timeout):
         logging.info("Stdout : " + str(result.stdout))
         logging.info("Stderr : " + str(result.stderr))
 
-        return True,deviceUUIDs
+        lines = result.stdout.split("\n")
+        logging.info("stdout line count : " + str(len(lines)))
+        if len(lines) == 0:
+            logging.info("No UUID found")
+            return True, deviceUUIDs
+        
+        for line in lines:
+            if "Found canbus_uuid=" in line and "Application: Klipper" in line:
+                segments = line.split(" ")
+                for segment in segments:
+                    if "canbus_uuid=" in segment:
+                        uuid = segment.replace("canbus_uuid=","").replace(",","")
+                        logging.info("Found " + uuid + " in stdout.")
+                        deviceUUIDs.append(uuid)
+        logging.info("Found " + str(len(deviceUUIDs)) + " UUID(s).")
+        return len(deviceUUIDs) > 0,deviceUUIDs
     except Exception as e:
         logging.error("Get CAN device UUIDs error : " + str(e))
         return False, []
@@ -170,7 +185,7 @@ def main():
         logging.info("No CAN device found.")
         sys.exit(0)
     else:
-        logging.info("Found devices : " + deviceUUIDs)
+        logging.info("Found devices : " + str(deviceUUIDs))
 
 
     DEVICE_FOUND = 0
@@ -192,6 +207,7 @@ def main():
     # update the config 
     logging.info("Found suitable device UUID : " + NEW_TOOLHEAD_UUID)
     KLIPPER_CONFIG[SERVICE_CONFIG["deviceConfigName"]]["canbus_uuid"] = NEW_TOOLHEAD_UUID
+
     # write config file
     success = writeKlipperConfig(KLIPPER_CONFIG,SAVED_CONFIG,SERVICE_CONFIG["klipperConfigFile"])
     if success:

@@ -17,7 +17,7 @@ cd ~
 git clone https://github.com/ChipCE/klipper-auto-can-scanner
 cd klipper-auto-can-scanner
 chmod +x ./install.sh
-sudo ./install.sh
+./install.sh
 </pre>
 
 ## 2. 設定ファイル
@@ -27,7 +27,7 @@ sudo ./install.sh
   "scanTimeout" : 3,
   "klipperConfigFile": "/home/pi/klipper_config/printer.cfg",
   "restartKlipper": true,
-  "deviceConfigName": "mcu myCanDevice",
+  "deviceConfigName": "mcu toolhead",
   "blackList": [],
   "whiteList": []
 }
@@ -37,7 +37,7 @@ sudo ./install.sh
 - <code>scanTimeout</code> : CANスキャンの最大時間。(単位:秒)、(例:3)
 - <code>klipperConfigFile</code> : printer.cfgのパス。(例:"/home/pi/klipper_config/printer.cfg")
 - <code>restartKlipper</code> : 設定を変更した後、klipperを再起動させるかどうか。(例:true/false)
-- <code>deviceConfigName</code> : printer.cfgに指定されたツールヘッドの設定項目名。(例:mcu myCanDevice)
+- <code>deviceConfigName</code> : printer.cfgに指定されたツールヘッドの設定項目名。(例:mcu toolhead)
 - <code>blackList</code> : ブラックリスト。ここに記載されたUUIDをスキップする。(例:["uuid1","uuid2"])
 - <code>whiteList</code> : ホワイトリスト。ここに記載されたUUIDのみ使用する。記載しない場合は全て使用可。(例:["uuid1","uuid2"])
 

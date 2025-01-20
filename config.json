@@ -1,9 +1,9 @@
 {
   "scannerPath" : "./scan.sh",
-  "scanTimeout" : 3,
+  "scanTimeout" : 10,
   "klipperConfigFile": "/home/pi/klipper_config/printer.cfg",
   "restartKlipper": true,
-  "deviceConfigName": "mcu myCanDevice",
+  "deviceConfigName": "mcu toolhead",
   "blackList": [],
   "whiteList": []
 }
