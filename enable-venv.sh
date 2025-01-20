@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV_NAME="tets-venv"
+ENV_NAME="test-venv"
 
 currentPath=${PWD}
 cd "$currentPath"
