@@ -1,7 +1,7 @@
 [Unit]
-Description=Custom Klipper variable
-Wants=network.target
-After=network.target
+Description=Klipper auto CAN scanner
+Wants=klipper.service
+After=klipper.service
 
 [Service]
 Type=oneshot

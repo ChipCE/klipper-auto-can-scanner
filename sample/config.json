@@ -1,5 +1,5 @@
 {
-  "scannerPath" : "/home/pi/klipper-auto-can-scanner/scan.sh",
+  "scannerPath" : "./scan.sh",
   "scanTimeout" : 3,
   "klipperConfigFile": "/home/pi/klipper_config/printer.cfg",
   "restartKlipper": true,
