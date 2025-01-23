@@ -1,5 +1,7 @@
 import sys
-import time
+import os
+import shutil
+from datetime import datetime
 import json
 import configparser
 import subprocess
@@ -39,7 +41,7 @@ def getCanDeviceUUIDs(scannerPath,timeout):
                         logging.info("Found " + uuid + " in stdout.")
                         deviceUUIDs.append(uuid)
         logging.info("Found " + str(len(deviceUUIDs)) + " UUID(s).")
-        return len(deviceUUIDs) > 0,deviceUUIDs
+        return True,deviceUUIDs
     except Exception as e:
         logging.error("Get CAN device UUIDs error : " + str(e))
         return False, []
@@ -52,6 +54,10 @@ def readServiceConfig(configFile):
 
             if type(serviceConfigJson["klipperConfigFile"]) != str or serviceConfigJson["klipperConfigFile"] == "":
                 logging.error("Invalid config : klipperConfigFile")
+                hasError = True
+
+            if type(serviceConfigJson["backupKlipperConfig"]) != bool:
+                logging.error("Invalid config : backupKlipperConfig")
                 hasError = True
 
             if type(serviceConfigJson["scannerPath"]) != str or serviceConfigJson["scannerPath"] == "":
@@ -132,6 +138,16 @@ def writeKlipperConfig(klipperConfig,savedConfig,configFile):
             return False
     return True
 
+def backupKlipperConfig(configFile):
+    savePath = str(os.path.dirname(configFile)) + "/" + "klipper-auto-can-scanner_backup-" + datetime.now().strftime('%Y%m%d-%H%M') + "_printer.cfg"
+    logging.info("Save printer.cfg backup as " + savePath)
+    try:
+        shutil.copy(configFile, savePath)
+        return True
+    except Exception as e:
+        logging.error("Failed to save printer.cfg backup. Error : " + str(e))
+        return False
+
 def restartKlipper():
     try:
         # Restart the service
@@ -184,10 +200,10 @@ def main():
 
     success, deviceUUIDs = getCanDeviceUUIDs(SERVICE_CONFIG["scannerPath"],SERVICE_CONFIG["scanTimeout"])
     if not success:
-        logging.error("CAN device UUID(s) not found")
+        logging.error("CAN device UUID not found")
         sys.exit(1)
     if len(deviceUUIDs) == 0:
-        logging.info("No CAN device found.")
+        logging.info("No CAN device found, or the devices are already configured.")
         sys.exit(0)
     else:
         logging.info("Found device UUID(s) : " + str(deviceUUIDs))
@@ -202,17 +218,24 @@ def main():
 
 
     if DEVICE_FOUND == 0:
-        logging.info("No suitable CAN device was found, or the device is already configured")
+        logging.info("No suitable CAN device was found, or the devices are already configured.")
         sys.exit(0)
 
     if DEVICE_FOUND > 1:
         logging.error(str(DEVICE_FOUND) + " devices were found, but it cannot be determined which one is the correct device.")
         sys.exit(1)
 
-    # update the config 
     logging.info("Found suitable device UUID : " + NEW_TOOLHEAD_UUID)
-    KLIPPER_CONFIG[SERVICE_CONFIG["deviceConfigName"]]["canbus_uuid"] = NEW_TOOLHEAD_UUID
+   
 
+    if SERVICE_CONFIG["backupKlipperConfig"]:
+        success = backupKlipperConfig(SERVICE_CONFIG["klipperConfigFile"])
+        if not success:
+            logging.error("Failed to save printer.cfg backup")
+            sys.exit(1)
+
+    # update config
+    KLIPPER_CONFIG[SERVICE_CONFIG["deviceConfigName"]]["canbus_uuid"] = NEW_TOOLHEAD_UUID
     # write config file
     success = writeKlipperConfig(KLIPPER_CONFIG,SAVED_CONFIG,SERVICE_CONFIG["klipperConfigFile"])
     if success:

@@ -4,6 +4,7 @@
   "deviceConfigName": "mcu toolhead",
   "mainMcuUsingCan" : true,
   "klipperConfigFile": "/home/pi/klipper_config/printer.cfg",
+  "backupKlipperConfig" : true,
   "restartKlipper": true,
   "blackList": [],
   "whiteList": []

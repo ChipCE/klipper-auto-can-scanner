@@ -36,6 +36,7 @@ chmod +x ./install.sh
   "deviceConfigName": "mcu toolhead",
   "mainMcuUsingCan" : true,
   "klipperConfigFile": "/home/pi/klipper_config/printer.cfg",
+  "backupKlipperConfig" : true,
   "restartKlipper": true,
   "blackList": [],
   "whiteList": []
@@ -47,6 +48,7 @@ chmod +x ./install.sh
 - <code>deviceConfigName</code> : printer.cfgに指定されたツールヘッドの設定項目名。(例:mcu toolhead)
 - <code>mainMcuUsingCan</code> : メインmcuがCAN通信で接続する場合trueにセットする。(例:true/false)
 - <code>klipperConfigFile</code> : printer.cfgのパス。(例:"/home/pi/klipper_config/printer.cfg")
+- <code>backupKlipperConfig</code> : 設定を書き込む前に、現在の設定のバックアップをするかどうか。バックアップファイルは<code>klipperConfigFile</code>で指定された設定ファイルと同じフォルダーに配置されます。ファイル名<code>klipper-auto-can-scanner_backup-yyyymmdd-hhmm_printer.cfg</code>。(例:true/false)
 - <code>restartKlipper</code> : 設定を変更した後、klipperを再起動させるかどうか。(例:true/false)
 - <code>blackList</code> : ブラックリスト。ここに記載されたUUIDをスキップする。(例:["uuid1","uuid2"])
 - <code>whiteList</code> : ホワイトリスト。ここに記載されたUUIDのみ使用する。記載しない場合は全て使用可。(例:["uuid1","uuid2"])
